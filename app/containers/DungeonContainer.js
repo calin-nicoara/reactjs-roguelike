@@ -1,6 +1,12 @@
 var React = require('react');
 var Dungeon = require('../components/Dungeon');
 
+function PlayerStats(props) {
+  return <div className="playerStats">
+    Health: {props.heroState.health}  Weapon: {props.heroState.weapon} Attack: {props.heroState.attack}  Level: {props.heroState.level} Next Level: 100 XP Dungeon: {props.heroState.dungeon}
+  </div>
+}
+
 class DungeonContainer extends React.Component {
   constructor() {
     super();
@@ -42,6 +48,10 @@ class DungeonContainer extends React.Component {
       BOSS: {
         value: 7,
         className: 'grid-square-boss'
+      },
+      PORTAL: {
+        value: 8,
+        className: 'grid-square-portal'
       }
     };
 
@@ -53,6 +63,26 @@ class DungeonContainer extends React.Component {
       y: 1
     };
 
+    this.enemyCoord = {
+      x: 4,
+      y: 3
+    };
+
+    this.healthCoord = {
+      x: 6,
+      y: 7
+    };
+
+    this.weaponCoord = {
+      x: 8,
+      y: 4
+    };
+
+    this.portalCoord = {
+      x: 3,
+      y: 9,
+    };
+
     const grid = [];
     for(let heightIndex = 0; heightIndex < this.height; heightIndex++) {
       grid[heightIndex] = [];
@@ -62,6 +92,14 @@ class DungeonContainer extends React.Component {
           currentGridState = this.gridStates.WALL;
         } else if(heightIndex === this.heroCoord.y && lengthIndex === this.heroCoord.x) {
           currentGridState = this.gridStates.HERO;
+        } else if(heightIndex === this.enemyCoord.y && lengthIndex === this.enemyCoord.x){
+          currentGridState = this.gridStates.ENEMY;
+        } else if(heightIndex === this.healthCoord.y && lengthIndex === this.healthCoord.x){
+          currentGridState = this.gridStates.HEALTH;
+        } else if(heightIndex === this.weaponCoord.y && lengthIndex === this.weaponCoord.x){
+          currentGridState = this.gridStates.WEAPON;
+        } else if(heightIndex === this.portalCoord.y && lengthIndex === this.portalCoord.x){
+          currentGridState = this.gridStates.PORTAL;
         } else {
           currentGridState = this.gridStates.EMPTY;
         }
@@ -71,8 +109,13 @@ class DungeonContainer extends React.Component {
 
     this.state = {
       grid: grid,
-      heroHealth: 200,
-      heroDamage: 50
+      heroState: {
+        health: 300,
+        weapon: 'stick',
+        attack: 14,
+        level: 0,
+        dungeon: 0
+      }
     };
 
     this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -118,6 +161,7 @@ class DungeonContainer extends React.Component {
   render() {
     return (
       <div className="container display">
+        <PlayerStats heroState={this.state.heroState}/>
         <div tabIndex='0' onKeyDown={this.handleKeyDown} className='dungeon'>
           {
             this.state.grid.map( (gridRow, rowIndex) =>
