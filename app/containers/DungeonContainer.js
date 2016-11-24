@@ -11,8 +11,6 @@ class DungeonContainer extends React.Component {
   constructor() {
     super();
 
-    this.handleKeyDown = this.handleKeyDown.bind(this);
-
     this.keyboardCodes = {
       37: 'KEY_LEFT',
       38: 'KEY_UP',
@@ -55,8 +53,8 @@ class DungeonContainer extends React.Component {
       }
     };
 
-    this.length = 50;
-    this.height = 50;
+    this.length = 20;
+    this.height = 20;
 
     this.heroCoord = {
       x: 1,
@@ -65,7 +63,7 @@ class DungeonContainer extends React.Component {
 
     this.enemyCoord = {
       x: 4,
-      y: 3
+      y: 3,
     };
 
     this.healthCoord = {
@@ -74,7 +72,7 @@ class DungeonContainer extends React.Component {
     };
 
     this.weaponCoord = {
-      x: 8,
+      x: 1,
       y: 4
     };
 
@@ -84,26 +82,41 @@ class DungeonContainer extends React.Component {
     };
 
     const grid = [];
+
+    let enemyData = {
+      health: 100,
+      attack: 4
+    };
+
+    let healthData = {
+      health: 200
+    };
+
+    let weaponData = {
+      attack: 30,
+      weapon: 'sword 1'
+    };
+
     for(let heightIndex = 0; heightIndex < this.height; heightIndex++) {
       grid[heightIndex] = [];
       for(let lengthIndex = 0; lengthIndex < this.length; lengthIndex++) {
-        let currentGridState;
+        let currentGridSquare;
         if(heightIndex === 0 || heightIndex === this.height-1 || lengthIndex === 0 || lengthIndex === this.length-1) {
-          currentGridState = this.gridStates.WALL;
+          currentGridSquare = { state: this.gridStates.WALL};
         } else if(heightIndex === this.heroCoord.y && lengthIndex === this.heroCoord.x) {
-          currentGridState = this.gridStates.HERO;
+          currentGridSquare = { state: this.gridStates.HERO };
         } else if(heightIndex === this.enemyCoord.y && lengthIndex === this.enemyCoord.x){
-          currentGridState = this.gridStates.ENEMY;
+          currentGridSquare = { state: this.gridStates.ENEMY, data: enemyData};
         } else if(heightIndex === this.healthCoord.y && lengthIndex === this.healthCoord.x){
-          currentGridState = this.gridStates.HEALTH;
+          currentGridSquare = { state: this.gridStates.HEALTH, data: healthData };
         } else if(heightIndex === this.weaponCoord.y && lengthIndex === this.weaponCoord.x){
-          currentGridState = this.gridStates.WEAPON;
+          currentGridSquare = { state: this.gridStates.WEAPON, data: weaponData };
         } else if(heightIndex === this.portalCoord.y && lengthIndex === this.portalCoord.x){
-          currentGridState = this.gridStates.PORTAL;
+          currentGridSquare = { state: this.gridStates.PORTAL };
         } else {
-          currentGridState = this.gridStates.EMPTY;
+          currentGridSquare = { state: this.gridStates.EMPTY };
         }
-        grid[heightIndex][lengthIndex] = currentGridState;
+        grid[heightIndex][lengthIndex] = currentGridSquare;
       }
     }
 
@@ -120,6 +133,16 @@ class DungeonContainer extends React.Component {
 
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.showRow = this.showRow.bind(this);
+    this.gameover = this.gameover.bind(this);
+    this.occupySquare = this.occupySquare.bind(this);
+  }
+  gameover() {
+
+  }
+  occupySquare(newHeroPosition) {
+    this.state.grid[this.heroCoord.x][this.heroCoord.y] = {state: this.gridStates.EMPTY };
+    this.state.grid[newHeroPosition.x][newHeroPosition.y] = { state: this.gridStates.HERO };
+    this.heroCoord = JSON.parse(JSON.stringify(newHeroPosition));
   }
   handleKeyDown(event) {
     let keyPress = this.keyboardCodes[event.keyCode];
@@ -141,20 +164,38 @@ class DungeonContainer extends React.Component {
           break;
       }
 
-      if(this.state.grid[newHeroPosition.x][newHeroPosition.y].value === this.gridStates.EMPTY.value) {
-        this.state.grid[this.heroCoord.x][this.heroCoord.y] = this.gridStates.EMPTY;
-        this.state.grid[newHeroPosition.x][newHeroPosition.y] = this.gridStates.HERO;
+      let newGridSquare = this.state.grid[newHeroPosition.x][newHeroPosition.y];
+      const heroState = this.state.heroState;
 
-        this.heroCoord = JSON.parse(JSON.stringify(newHeroPosition));
+      if(newGridSquare.state.value === this.gridStates.EMPTY.value) {
+        this.occupySquare(newHeroPosition, newHeroPosition);
+      } else if(newGridSquare.state.value == this.gridStates.ENEMY.value) {
+        heroState.health -= newGridSquare.data.attack;
+        newGridSquare.data.health -= heroState.attack;
 
-        this.setState(this.state);
+        if(heroState.health <= 0) {
+          this.gameover();
+        } else if(newGridSquare.data.health <= 0) {
+          this.state.grid[newHeroPosition.x][newHeroPosition.y] = {state: this.gridStates.EMPTY };
+        }
+      } else if(newGridSquare.state.value == this.gridStates.WEAPON.value) {
+        heroState.weapon = newGridSquare.data.weapon;
+        heroState.attack = newGridSquare.data.attack;
+
+        this.occupySquare(newHeroPosition);
+      } else if(newGridSquare.state.value == this.gridStates.HEALTH.value) {
+        heroState.health += newGridSquare.data.health;
+
+        this.occupySquare(newHeroPosition);
       }
+
+      this.setState(this.state);
     }
   }
   showRow(gridRow, rowIndex) {
     return gridRow.map((gridSquare, columnIndex) => {
       return (
-        <div className={gridSquare.className + ' grid-square'} key={rowIndex + this.length * columnIndex }></div>
+        <div className={gridSquare.state.className + ' grid-square'} key={rowIndex + this.length * columnIndex }></div>
       )
     })
   }
