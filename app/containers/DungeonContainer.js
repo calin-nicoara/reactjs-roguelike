@@ -81,6 +81,13 @@ class DungeonContainer extends React.Component {
       y: 9,
     };
 
+    this.gridGeneratorOptions = {
+      minRooms: 18,
+      maxRooms: 25,
+      minRoomLength: 10,
+      maxRoomLength: 40
+    };
+
     const grid = [];
 
     let enemyData = {
